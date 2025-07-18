@@ -1,37 +1,367 @@
-@import "tailwindcss";
-/* @import "tw-animate-css"; */
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 @layer base {
   :root {
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.75rem;
+
+    /* Sidebar variables */
+    --sidebar: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 10.6% 64.9%;
+
+    /* Sidebar layout variables */
+    --sidebar-width: 16rem;
+    --sidebar-width-icon: 3rem;
+    --sidebar-width-mobile: 18rem;
   }
 
   .dark {
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.439 0 0);
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+
+    /* Dark mode sidebar */
+    --sidebar: 240 5.9% 10%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 224.3 76.3% 94.1%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 10.6% 64.9%;
   }
 }
 
-body {
-  font-family: "Inter", sans-serif;
-  background-color: #f9fafb; /* Light mode */
-  color: #111827;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Inter", sans-serif;
+  }
 }
 
-.dark body {
-  background-color: #111827;
-  color: #f9fafb;
+/* Sidebar layout fixes */
+@layer components {
+  /* Fix sidebar container positioning and sizing */
+  [data-slot="sidebar-wrapper"] {
+    position: relative;
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+  }
+
+  /* Sidebar gap for proper spacing */
+  [data-slot="sidebar-gap"] {
+    flex-shrink: 0;
+    width: var(--sidebar-width);
+    transition: width 200ms ease-linear;
+  }
+
+  /* When sidebar is collapsed - CRITICAL FIX */
+  [data-state="collapsed"] [data-slot="sidebar-gap"] {
+    width: var(--sidebar-width-icon);
+  }
+
+  /* Alternative targeting for collapsed state */
+  [data-collapsible="icon"][data-state="collapsed"] [data-slot="sidebar-gap"] {
+    width: var(--sidebar-width-icon) !important;
+  }
+
+  /* Ensure the gap respects group state */
+  .group[data-state="collapsed"] [data-slot="sidebar-gap"] {
+    width: var(--sidebar-width-icon) !important;
+  }
+
+  /* When sidebar is offcanvas (mobile) */
+  [data-collapsible="offcanvas"] [data-slot="sidebar-gap"] {
+    width: 0;
+  }
+
+  /* Sidebar container */
+  [data-slot="sidebar-container"] {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 40;
+    height: 100vh;
+    width: var(--sidebar-width);
+    transition: left 200ms ease-linear, width 200ms ease-linear;
+  }
+
+  /* When collapsed */
+  [data-state="collapsed"] [data-slot="sidebar-container"] {
+    width: var(--sidebar-width-icon);
+  }
+
+  /* Additional selectors for collapsed state */
+  [data-collapsible="icon"][data-state="collapsed"]
+    [data-slot="sidebar-container"] {
+    width: var(--sidebar-width-icon) !important;
+  }
+
+  /* Group level state targeting */
+  .group[data-state="collapsed"] [data-slot="sidebar-container"] {
+    width: var(--sidebar-width-icon) !important;
+  }
+
+  /* When offcanvas */
+  [data-collapsible="offcanvas"] [data-slot="sidebar-container"] {
+    left: calc(var(--sidebar-width) * -1);
+  }
+
+  /* Main content area */
+  [data-slot="sidebar-inset"] {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    [data-slot="sidebar-container"] {
+      width: var(--sidebar-width-mobile);
+    }
+
+    [data-collapsible="offcanvas"] [data-slot="sidebar-container"] {
+      left: calc(var(--sidebar-width-mobile) * -1);
+    }
+  }
+
+  /* Ensure proper backdrop for mobile */
+  [data-slot="sheet-overlay"] {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background-color: rgb(0 0 0 / 0.8);
+  }
+
+  [data-slot="sheet-content"] {
+    position: fixed;
+    z-index: 50;
+    gap: 1rem;
+    background-color: hsl(var(--background));
+    padding: 1.5rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  }
+
+  /* Fix z-index issues for modals and overlays */
+  [data-slot="dialog-overlay"] {
+    z-index: 1040 !important;
+  }
+
+  [data-slot="dialog-content"] {
+    z-index: 1050 !important;
+  }
+
+  [data-slot="tooltip-content"] {
+    z-index: 1070 !important;
+  }
+
+  /* Sidebar menu button states */
+  [data-slot="sidebar-menu-button"] {
+    transition: all 0.2s ease-in-out;
+  }
+
+  [data-slot="sidebar-menu-button"]:hover {
+    background-color: hsl(var(--sidebar-accent));
+    color: hsl(var(--sidebar-accent-foreground));
+  }
+
+  [data-slot="sidebar-menu-button"][data-active="true"] {
+    background-color: hsl(var(--sidebar-accent));
+    color: hsl(var(--sidebar-accent-foreground));
+    font-weight: 500;
+  }
+
+  /* Sidebar group labels */
+  [data-slot="sidebar-group-label"] {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: hsl(var(--sidebar-foreground) / 0.7);
+    margin-bottom: 0.25rem;
+    padding: 0.5rem;
+  }
+
+  /* Sidebar badges */
+  [data-slot="sidebar-menu-badge"] {
+    background-color: hsl(var(--sidebar-primary) / 0.1);
+    color: hsl(var(--sidebar-primary));
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.125rem 0.375rem;
+    border-radius: 9999px;
+    margin-left: auto;
+  }
+
+  /* Ensure smooth transitions for all sidebar elements */
+  [data-slot="sidebar"] * {
+    transition-property: color, background-color, border-color,
+      text-decoration-color, fill, stroke, opacity, box-shadow, transform,
+      filter, backdrop-filter;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  /* Fix for icon-only sidebar state */
+  [data-state="collapsed"] [data-slot="sidebar-group-label"] {
+    opacity: 0;
+    margin-top: -2rem;
+    transition: opacity 200ms ease-linear, margin-top 200ms ease-linear;
+  }
+
+  [data-state="collapsed"] [data-slot="sidebar-menu-badge"] {
+    opacity: 0;
+    transition: opacity 200ms ease-linear;
+  }
+
+  /* Hide text content when collapsed */
+  [data-state="collapsed"]
+    [data-slot="sidebar-menu-button"]
+    span:not(.sr-only) {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    transition: opacity 200ms ease-linear, width 200ms ease-linear;
+  }
+
+  /* Hide sidebar header text when collapsed */
+  [data-state="collapsed"] [data-slot="sidebar-header"] .grid {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    transition: opacity 200ms ease-linear, width 200ms ease-linear;
+  }
+
+  /* Adjust menu button padding when collapsed */
+  [data-state="collapsed"] [data-slot="sidebar-menu-button"] {
+    padding: 0.5rem;
+    justify-content: center;
+    transition: padding 200ms ease-linear;
+  }
+
+  /* Center icons when collapsed */
+  [data-state="collapsed"] [data-slot="sidebar-menu"] {
+    align-items: center;
+  }
+
+  /* Hide separators when collapsed */
+  [data-state="collapsed"] [data-slot="sidebar-separator"] {
+    opacity: 0;
+    transition: opacity 200ms ease-linear;
+  }
+
+  /* Force sidebar content overflow hidden when collapsed */
+  [data-state="collapsed"] [data-slot="sidebar-content"] {
+    overflow: hidden;
+  }
+
+  /* Ensure sidebar inner container respects width */
+  [data-slot="sidebar-inner"] {
+    width: 100%;
+    overflow: hidden;
+    transition: width 200ms ease-linear;
+  }
+
+  /* Additional collapse fixes */
+  [data-collapsible="icon"][data-state="collapsed"]
+    [data-slot="sidebar-group-content"] {
+    overflow: hidden;
+  }
+
+  [data-collapsible="icon"][data-state="collapsed"] span:not(.sr-only) {
+    display: none;
+  }
+
+  [data-collapsible="icon"][data-state="collapsed"]
+    [data-slot="sidebar-menu-badge"] {
+    display: none;
+  }
+
+  [data-collapsible="icon"][data-state="collapsed"]
+    [data-slot="sidebar-group-label"] {
+    display: none;
+  }
+
+  /* CRITICAL: Force content area to respect collapsed sidebar width */
+  [data-state="collapsed"] {
+    --sidebar-width: var(--sidebar-width-icon) !important;
+  }
+
+  /* Additional targeting for sidebar wrapper state */
+  .group\/sidebar-wrapper[data-state="collapsed"] {
+    --sidebar-width: var(--sidebar-width-icon) !important;
+  }
+
+  /* Force recalculation of all width-dependent elements */
+  [data-state="collapsed"] * {
+    --sidebar-width: var(--sidebar-width-icon) !important;
+  }
+
+  /* Direct targeting of the wrapper element */
+  [data-slot="sidebar-wrapper"][data-state="collapsed"] {
+    --sidebar-width: var(--sidebar-width-icon) !important;
+  }
+
+  /* Peer targeting (in case the sidebar uses peer classes) */
+  .peer[data-state="collapsed"] ~ * {
+    --sidebar-width: var(--sidebar-width-icon) !important;
+  }
+
+  /* Sidebar separator styling */
+  [data-slot="sidebar-separator"] {
+    background-color: hsl(var(--sidebar-border));
+    height: 1px;
+    width: auto;
+    margin: 0.5rem 0.5rem;
+  }
+
+  /* Header responsive adjustments */
+  .group-has-\[data-collapsible\=icon\]\/sidebar-wrapper\:h-12 {
+    transition: height 200ms ease-linear;
+  }
 }
