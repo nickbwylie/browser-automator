@@ -1,265 +1,133 @@
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-// import { Editor } from "@monaco-editor/react"; // Assuming you have Monaco set up
-import axios from "axios";
-import { supabase } from "../supabaseClient";
+// ScrapeTool.tsx
+import React, { useState } from "react";
 
-export default function Dashboard() {
-  const [scripts, setScripts] = useState([]);
-  const [selectedScripts, setSelectedScripts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newScriptName, setNewScriptName] = useState("");
-  const [newScriptCode, setNewScriptCode] = useState(
-    "// Your Playwright script here"
-  );
-  const [editingScript, setEditingScript] = useState(null);
+interface ScrapeField {
+  selector: string;
+  type: "text" | "attr" | "html";
+  name: string;
+  attr?: string;
+}
 
-  useEffect(() => {
-    fetchScripts();
-  }, []);
+export default function ScrapeTool() {
+  const [url, setUrl] = useState("");
+  const [fields, setFields] = useState<ScrapeField[]>([]);
+  const [script, setScript] = useState("");
 
-  const fetchScripts = async () => {
-    const { data: session } = await supabase.auth.getSession();
-    if (session) {
-      const token = session.session?.access_token;
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/scripts`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setScripts(response.data);
+  const startSession = async () => {
+    await fetch("http://127.0.0.1:3003/start-recording", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    alert("Browser opened");
+  };
+
+  const saveScrapeTargets = async () => {
+    await fetch("http://127.0.0.1:3003/save-scrape-targets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(fields), // assuming fields is your list of { selector, name, type }
+    });
+  };
+
+  const injectTool = async () => {
+    await fetch("http://127.0.0.1:3003/inject-selector-tool", {
+      method: "POST",
+    });
+    alert("Selector tool injected");
+  };
+
+  const addField = () => {
+    const selector = prompt("Enter selector");
+    const type = prompt("Type: text, html, or attr") as
+      | "text"
+      | "html"
+      | "attr";
+    const name = prompt("Name to use in code");
+    const attr =
+      type === "attr" ? prompt("Attribute name (e.g., href, src)") : undefined;
+
+    if (selector && name && type) {
+      setFields([...fields, { selector, type, name, attr }]);
     }
   };
 
-  const handleSelect = (id: string, checked: boolean) => {
-    if (checked) {
-      setSelectedScripts([...selectedScripts, id]);
-    } else {
-      setSelectedScripts(
-        selectedScripts.filter((selectedId) => selectedId !== id)
-      );
-    }
+  const preview = async (selector: string, type: string, attr?: string) => {
+    const res = await fetch("http://127.0.0.1:3003/extract", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ selector, type, attr }),
+    });
+    const data = await res.json();
+    alert(`Preview result: ${data.result}`);
   };
 
-  const handleRunSelected = async () => {
-    const { data: session } = await supabase.auth.getSession();
-    if (session) {
-      const token = session.session?.access_token;
-      for (const id of selectedScripts) {
-        await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/run/${id}`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-      }
-      alert(`${selectedScripts.length} scripts queued for run!`);
-      setSelectedScripts([]);
-    }
-  };
+  const generate = async () => {
+    await saveScrapeTargets();
 
-  const handleCreateScript = async () => {
-    const { data: session } = await supabase.auth.getSession();
-    if (session) {
-      const token = session.session?.access_token;
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/scripts`,
-        {
-          name: newScriptName,
-          code: newScriptCode,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setIsCreateModalOpen(false);
-      fetchScripts();
-    }
+    const res = await fetch("http://127.0.0.1:3003/generate-script", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, steps: fields }),
+    });
+    const data = await res.json();
+    setScript(data.script);
   };
-
-  const handleEditScript = (script: any) => {
-    setEditingScript(script);
-    setNewScriptName(script.name);
-    setNewScriptCode(script.code);
-    setIsCreateModalOpen(true);
-  };
-
-  const handleUpdateScript = async () => {
-    if (editingScript) {
-      const { data: session } = await supabase.auth.getSession();
-      if (session) {
-        const token = session.session?.access_token;
-        await axios.put(
-          `${import.meta.env.VITE_BACKEND_URL}/scripts/${editingScript.id}`,
-          {
-            name: newScriptName,
-            code: newScriptCode,
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setIsCreateModalOpen(false);
-        setEditingScript(null);
-        fetchScripts();
-      }
-    }
-  };
-
-  const handleDeleteScript = async (id: string) => {
-    if (confirm("Are you sure?")) {
-      const { data: session } = await supabase.auth.getSession();
-      if (session) {
-        const token = session.session?.access_token;
-        await axios.delete(
-          `${import.meta.env.VITE_BACKEND_URL}/scripts/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        fetchScripts();
-      }
-    }
-  };
-
-  const filteredScripts = scripts.filter((script: any) =>
-    script.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Scripts</CardTitle>
-        <div className="flex items-center space-x-2">
-          <Input
-            placeholder="Search scripts..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Button
-            onClick={() => {
-              setEditingScript(null);
-              setNewScriptName("");
-              setNewScriptCode("// Your script");
-              setIsCreateModalOpen(true);
-            }}
-          >
-            Create New
-          </Button>
-          <Button
-            disabled={selectedScripts.length === 0}
-            onClick={handleRunSelected}
-          >
-            Run Selected
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead></TableHead> {/* Checkbox column */}
-              <TableHead>Name</TableHead>
-              <TableHead>Last Modified</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredScripts.map((script: any) => (
-              <TableRow key={script.id}>
-                <TableCell>
-                  <Checkbox
-                    checked={selectedScripts.includes(script.id)}
-                    onCheckedChange={(checked) =>
-                      handleSelect(script.id, checked as boolean)
-                    }
-                  />
-                </TableCell>
-                <TableCell>{script.name}</TableCell>
-                <TableCell>{script.created_at}</TableCell>{" "}
-                {/* Adjust to your DB field */}
-                <TableCell className="space-x-2">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleEditScript(script)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleDeleteScript(script.id)}
-                  >
-                    Delete
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-2">Visual Scrape Builder</h2>
 
-      {/* Create/Edit Modal */}
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editingScript ? "Edit Script" : "Create New Script"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Label>Name</Label>
-            <Input
-              value={newScriptName}
-              onChange={(e) => setNewScriptName(e.target.value)}
-            />
+      <input
+        className="border p-2 w-full mb-2"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="Enter site URL"
+      />
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={startSession}
+          className="bg-green-600 text-white px-4 py-2 rounded"
+        >
+          Start Session
+        </button>
+        <button
+          onClick={injectTool}
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          Inject Selector Tool
+        </button>
+        <button
+          onClick={addField}
+          className="bg-purple-600 text-white px-4 py-2 rounded"
+        >
+          Add Field
+        </button>
+        <button
+          onClick={generate}
+          className="bg-black text-white px-4 py-2 rounded"
+        >
+          Generate Script
+        </button>
+      </div>
 
-            <Label>Script Code</Label>
-            {/* <Editor
-              height="400px"
-              defaultLanguage="javascript"
-              value={newScriptCode}
-              onChange={(value) => setNewScriptCode(value || "")}
-              options={{ minimap: { enabled: false } }}
-            /> */}
-
-            {/* Visual Recorder Placeholder */}
-            <div className="border p-4">
-              <p>
-                Visual Recorder (Iframe or noVNC integration here for site
-                preview and element selection)
-              </p>
-            </div>
-
-            <Button
-              onClick={editingScript ? handleUpdateScript : handleCreateScript}
+      <ul className="mb-4">
+        {fields.map((f, i) => (
+          <li key={i}>
+            <strong>{f.name}</strong> — <code>{f.selector}</code> [{f.type}]
+            <button
+              onClick={() => preview(f.selector, f.type, f.attr)}
+              className="ml-2 text-blue-500 underline"
             >
-              {editingScript ? "Update" : "Create"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </Card>
+              Preview
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {script && (
+        <pre className="bg-gray-100 p-4 overflow-auto text-sm">{script}</pre>
+      )}
+    </div>
   );
 }
