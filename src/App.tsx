@@ -1,13 +1,12 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Auth from "./myComponents/Auth";
 import Dashboard from "./myComponents/Dashboard";
+import BrowserAutomation from "./myComponents/BrowserAutomation";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Auth />} />
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<BrowserAutomation />} />
       </Routes>
     </Router>
   );

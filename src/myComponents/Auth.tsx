@@ -1,19 +1,22 @@
 import { useState } from "react";
 import { supabase } from "../supabaseClient";
 
-export default function Auth() {
+export default function Auth({
+  setShowLogin,
+}: {
+  setShowLogin: (show: boolean) => void;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
 
   const handleAuth = async () => {
-    console.log("Handling auth for:", isLogin ? "login" : "signup");
     const { error } = isLogin
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({ email, password });
     if (error) alert(error.message);
 
-    console.log("Auth response:", error ? error.message : "Success");
+    setShowLogin(false);
   };
 
   return (

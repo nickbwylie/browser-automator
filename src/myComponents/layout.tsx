@@ -1,12 +1,32 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
+import { supabase } from "@/supabaseClient";
+import Auth from "./Auth";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const [showLogin, setShowLogin] = React.useState(false);
+
+  useEffect(() => {
+    //get user from supabase
+    async function checkUser() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        // alert("You must be logged in to use the scrape tool");
+        setShowLogin(true);
+        return;
+      }
+    }
+
+    checkUser();
+  }, []);
+
   return (
     <SidebarProvider
       style={
@@ -35,7 +55,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Main content area with explicit overflow handling */}
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-auto">
-          {children}
+          {showLogin ? <Auth setShowLogin={setShowLogin} /> : children}
         </div>
       </SidebarInset>
     </SidebarProvider>
